@@ -5,27 +5,71 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var adapter: SelectedAppAdapter
+    private val selectedApps = mutableListOf<AppInfo>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        val rvSelectedApps = findViewById<RecyclerView>(R.id.rvSelectedApps)
+        rvSelectedApps.layoutManager = LinearLayoutManager(this)
         
-        val button = Button(this).apply {
-            text = "Mulai Floating Service"
-            setOnClickListener {
-                if (checkOverlayPermission()) {
-                    startFloatingService()
-                } else {
-                    requestOverlayPermission()
-                }
+        adapter = SelectedAppAdapter(
+            apps = selectedApps,
+            onAddClick = {
+                val intent = Intent(this, AppListActivity::class.java)
+                startActivity(intent)
+            },
+            onRemoveClick = { appInfo ->
+                Prefs.removeApp(this, appInfo.packageName)
+                loadSelectedApps()
+            }
+        )
+        rvSelectedApps.adapter = adapter
+
+        findViewById<MaterialButton>(R.id.btnStartService).setOnClickListener {
+            if (checkOverlayPermission()) {
+                startFloatingService()
+            } else {
+                requestOverlayPermission()
             }
         }
 
-        setContentView(button)
+        findViewById<MaterialButton>(R.id.btnSpeedSettings).setOnClickListener {
+            startActivity(Intent(this, SpeedSettingsActivity::class.java))
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadSelectedApps()
+    }
+
+    private fun loadSelectedApps() {
+        selectedApps.clear()
+        val savedPackages = Prefs.getSelectedApps(this)
+        val pm = packageManager
+
+        for (pkg in savedPackages) {
+            try {
+                val appInfo = pm.getApplicationInfo(pkg, 0)
+                val appName = pm.getApplicationLabel(appInfo).toString()
+                val icon = pm.getApplicationIcon(appInfo)
+                selectedApps.add(AppInfo(appName, pkg, icon))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        adapter.notifyDataSetChanged()
     }
 
     private fun checkOverlayPermission(): Boolean {
