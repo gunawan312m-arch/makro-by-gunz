@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_dark"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Makro by Gunz"
+        android:textColor="@color/white"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Langkah 1: Aktivasi Aksesibilitas -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="1. Aktivasi Layanan (wajib)"
+        android:textColor="@color/grey_text"
+        android:textSize="13sp"
+        android:layout_marginBottom="6dp"/>
+
+    <Button
+        android:id="@+id/btnAktivasi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Aktifkan Layanan Aksesibilitas"
+        android:backgroundTint="@color/accent"
+        android:textColor="@color/white"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/tvStatusAksesibilitas"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Status: belum aktif"
+        android:textColor="@color/grey_text"
+        android:textSize="12sp"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- Langkah 2: Pilih Aplikasi -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="2. Pilih Aplikasi Target (wajib)"
+        android:textColor="@color/grey_text"
+        android:textSize="13sp"
+        android:layout_marginBottom="6dp"/>
+
+    <Button
+        android:id="@+id/btnPilihApp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Pilih Aplikasi"
+        android:backgroundTint="@color/accent"
+        android:textColor="@color/white"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/tvAppTerpilih"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Belum ada aplikasi dipilih"
+        android:textColor="@color/grey_text"
+        android:textSize="12sp"
+        android:layout_marginBottom="28dp"/>
+
+    <!-- Langkah 3: Mulai -->
+    <Button
+        android:id="@+id/btnMulai"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Mulai Mode Mengambang"
+        android:backgroundTint="@color/confirm_green"
+        android:textColor="@color/white"
+        android:enabled="false"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Tekan sekali ikon mengambang = mulai/berhenti ketuk otomatis.\nTahan lama ikon mengambang = mode geser posisi, lalu tekan tombol centang untuk konfirmasi."
+        android:textColor="@color/grey_text"
+        android:textSize="12sp"
+        android:layout_marginTop="24dp"/>
+
+</LinearLayout>
