@@ -6,15 +6,25 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 class AppListActivity : AppCompatActivity() {
 
+    companion object {
+        // Jika diisi, artinya mode "ganti aplikasi ini", bukan "tambah baru"
+        const val EXTRA_REPLACE_PACKAGE = "extra_replace_package"
+    }
+
+    private var replacePackage: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_app_list)
+
+        replacePackage = intent.getStringExtra(EXTRA_REPLACE_PACKAGE)
 
         val rv: RecyclerView = findViewById(R.id.rvApps)
         rv.layoutManager = LinearLayoutManager(this)
@@ -33,7 +43,7 @@ class AppListActivity : AppCompatActivity() {
         val resolvedApps: List<ResolveInfo> = pm.queryIntentActivities(intent, 0)
 
         return resolvedApps
-            .filter { it.activityInfo.packageName != packageName } // sembunyikan aplikasi ini sendiri
+            .filter { it.activityInfo.packageName != packageName }
             .map { resolveInfo ->
                 AppEntry(
                     packageName = resolveInfo.activityInfo.packageName,
@@ -46,13 +56,30 @@ class AppListActivity : AppCompatActivity() {
     }
 
     private fun confirmSelection(app: AppEntry) {
+        val isReplace = replacePackage != null
+        val pesan = if (isReplace) {
+            "Ganti aplikasi target menjadi \"${app.label}\"?"
+        } else {
+            "Tambahkan \"${app.label}\" sebagai aplikasi target?"
+        }
+
         AlertDialog.Builder(this)
             .setTitle("Konfirmasi")
-            .setMessage("Gunakan \"${app.label}\" sebagai aplikasi target untuk Makro by Gunz?")
+            .setMessage(pesan)
             .setPositiveButton("Konfirmasi") { _, _ ->
-                Prefs.setTargetApp(this, app.packageName, app.label)
-                setResult(Activity.RESULT_OK)
-                finish()
+                if (isReplace) {
+                    Prefs.replaceTargetApp(this, replacePackage!!, app.packageName, app.label)
+                    setResult(Activity.RESULT_OK)
+                    finish()
+                } else {
+                    val added = Prefs.addTargetApp(this, app.packageName, app.label)
+                    if (!added) {
+                        Toast.makeText(this, "Aplikasi ini sudah ada di daftar", Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+                    setResult(Activity.RESULT_OK)
+                    finish()
+                }
             }
             .setNegativeButton("Batal", null)
             .show()

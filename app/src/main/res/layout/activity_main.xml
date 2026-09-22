@@ -11,81 +11,88 @@
         android:layout_height="wrap_content"
         android:text="Makro by Gunz"
         android:textColor="@color/white"
-        android:textSize="24sp"
+        android:textSize="22sp"
         android:textStyle="bold"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="24dp" />
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp" />
 
-    <!-- Langkah 1: Aktivasi Aksesibilitas -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="1. Aktivasi Layanan (wajib)"
-        android:textColor="@color/grey_text"
-        android:textSize="13sp"
-        android:layout_marginBottom="6dp"/>
-
-    <Button
-        android:id="@+id/btnAktivasi"
+    <!-- Status Aktivasi (paling atas) -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Aktifkan Layanan Aksesibilitas"
-        android:backgroundTint="@color/accent"
-        android:textColor="@color/white"
-        android:layout_marginBottom="8dp"/>
+        android:orientation="vertical"
+        android:background="#1AFFFFFF"
+        android:padding="14dp"
+        android:layout_marginBottom="20dp">
 
+        <TextView
+            android:id="@+id/tvStatusAksesibilitas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Status Aktivasi: belum aktif"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/btnAktivasi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Aktifkan Layanan Aksesibilitas"
+            android:backgroundTint="@color/accent"
+            android:textColor="@color/white"/>
+    </LinearLayout>
+
+    <!-- Daftar aplikasi target: bisa digeser urutannya + tombol tambah -->
     <TextView
-        android:id="@+id/tvStatusAksesibilitas"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Status: belum aktif"
+        android:text="Aplikasi Target"
         android:textColor="@color/grey_text"
-        android:textSize="12sp"
+        android:textSize="13sp"
+        android:layout_marginBottom="8dp"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvSelectedApps"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="90dp"
+        android:orientation="horizontal"
         android:layout_marginBottom="20dp"/>
 
-    <!-- Langkah 2: Pilih Aplikasi -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="2. Pilih Aplikasi Target (wajib)"
-        android:textColor="@color/grey_text"
-        android:textSize="13sp"
-        android:layout_marginBottom="6dp"/>
-
+    <!-- Tombol menuju halaman pengaturan kecepatan -->
     <Button
-        android:id="@+id/btnPilihApp"
+        android:id="@+id/btnKecepatan"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Pilih Aplikasi"
-        android:backgroundTint="@color/accent"
+        android:text="Atur Kecepatan Ketuk Otomatis"
+        android:backgroundTint="#33FFFFFF"
         android:textColor="@color/white"
         android:layout_marginBottom="8dp"/>
 
-    <TextView
-        android:id="@+id/tvAppTerpilih"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Belum ada aplikasi dipilih"
-        android:textColor="@color/grey_text"
-        android:textSize="12sp"
-        android:layout_marginBottom="28dp"/>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
 
-    <!-- Langkah 3: Mulai -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Tekan 2x cepat (double tap) ikon mengambang = mulai/berhenti ketuk otomatis. Ikon bisa digeser kapan saja. Tahan lama ikon = mode edit (konfirmasi posisi / matikan)."
+        android:textColor="@color/grey_text"
+        android:textSize="11sp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Tombol Mulai (paling bawah) -->
     <Button
         android:id="@+id/btnMulai"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Mulai Mode Mengambang"
+        android:layout_height="56dp"
+        android:text="Mulai"
+        android:textSize="16sp"
         android:backgroundTint="@color/confirm_green"
         android:textColor="@color/white"
         android:enabled="false"/>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Tekan sekali ikon mengambang = mulai/berhenti ketuk otomatis.\nTahan lama ikon mengambang = mode geser posisi, lalu tekan tombol centang untuk konfirmasi."
-        android:textColor="@color/grey_text"
-        android:textSize="12sp"
-        android:layout_marginTop="24dp"/>
 
 </LinearLayout>

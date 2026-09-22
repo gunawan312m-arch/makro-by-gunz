@@ -35,6 +35,11 @@
             android:exported="false"
             android:label="@string/pilih_aplikasi" />
 
+        <activity
+            android:name=".SpeedSettingsActivity"
+            android:exported="false"
+            android:label="Kecepatan Ketuk" />
+
         <service
             android:name=".MacroAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"

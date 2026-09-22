@@ -14,6 +14,23 @@ Aplikasi Android (Kotlin, native) — bukan simulasi. Fitur benar-benar berjalan
 - **Tekan sekali (tap singkat)** → toggle ON/OFF ketuk otomatis. Saat aktif, ikon mengirim ketukan nyata (`GestureDescription` via AccessibilityService `dispatchGesture`) berulang setiap 150ms ke posisi ikon — bukan simulasi visual, ini gesture yang benar-benar dikirim ke sistem.
 - **Tahan lama (long-press ±500ms)** → masuk **mode edit posisi**: ikon bisa digeser bebas ke seluruh layar, dan tombol centang (✓) hijau muncul di bawahnya. Tekan tombol centang untuk **konfirmasi** posisi baru — posisi tersimpan (`SharedPreferences`) dan dipakai lagi saat service dijalankan ulang.
 
+## Alur aplikasi (v2 — update terbaru)
+1. **Splash screen** — logo custom + nama "Makro by Gunz" tampil ±1.5 detik lalu masuk ke menu utama.
+2. **Menu utama**, urut dari atas:
+   - **Status Aktivasi** (paling atas) — tombol untuk mengaktifkan Accessibility Service.
+   - **Aplikasi Target** — baris horizontal berisi ikon aplikasi yang sudah dipilih. Bisa **digeser urutannya langsung** (drag & drop dengan animasi bawaan RecyclerView). Tap salah satu ikon → muncul pilihan **"Ganti aplikasi"** atau **"Hapus dari daftar"**. Di ujung kanan ada tombol **➕** untuk menambah aplikasi baru (bisa lebih dari satu aplikasi target).
+   - **Atur Kecepatan Ketuk Otomatis** — membuka halaman baru dengan slider dari **Lambat** sampai **Sangat Cepat** (20ms–1000ms per ketukan), ada tombol **Konfirmasi** dan **Kembali**.
+   - **Tombol Mulai** (paling bawah) — **nonaktif (abu-abu)** selama Accessibility Service belum aktif atau belum ada aplikasi dipilih. Begitu ditekan: otomatis **membuka aplikasi target pertama** dan langsung menyalakan **mode mengambang** di atasnya.
+
+## Fitur mode mengambang (v2)
+- **Double tap (ketuk 2x cepat)** pada ikon mengambang → toggle ON/OFF ketuk-otomatis (dipilih double-tap, bukan sekali tap, supaya tidak sengaja aktif saat menggeser ikon).
+- **Geser (drag) ikon kapan saja** → ikon mengikuti jari secara realtime dan halus, tidak terikat harus masuk "mode edit" dulu — jadi tidak ada bug nyangkut saat digeser.
+- **Tahan lama (long-press)** → masuk **mode edit**: muncul 2 tombol kecil di sekitar ikon:
+  - ✓ hijau = **konfirmasi** posisi (tersimpan otomatis, tombol langsung hilang).
+  - ✕ merah = **matikan** seluruhnya — service berhenti dan semua ikon/tombol overlay hilang otomatis.
+- Notifikasi mode mengambang juga punya tombol "Matikan" langsung dari notifikasi.
+- Kecepatan ketuk otomatis mengikuti nilai yang diset di halaman "Atur Kecepatan".
+
 ## Cara build APK LANGSUNG DARI HP (tanpa PC)
 
 Build native Android (Gradle + Kotlin) tidak bisa jalan langsung di HP tanpa Android Studio/SDK. Cara paling praktis dari HP adalah **build di cloud pakai GitHub Actions** — workflow-nya sudah saya siapkan di `.github/workflows/build-apk.yml`, jadi HP kamu cuma tugasnya upload kode, sisanya di-build otomatis oleh server GitHub.

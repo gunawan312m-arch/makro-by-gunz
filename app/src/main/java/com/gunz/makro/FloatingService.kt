@@ -11,11 +11,13 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.view.GestureDetector
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
+import kotlin.math.abs
 
 class FloatingService : Service() {
 
@@ -27,25 +29,23 @@ class FloatingService : Service() {
     private var confirmView: View? = null
     private var confirmParams: WindowManager.LayoutParams? = null
 
+    private var stopView: View? = null
+    private var stopParams: WindowManager.LayoutParams? = null
+
     private val handler = Handler(Looper.getMainLooper())
 
-    // Interval antar ketukan otomatis saat mode aktif (ms). Bisa disesuaikan.
-    private val autoTapIntervalMs = 150L
+    private var autoTapIntervalMs = 150L
     private var isAutoTapping = false
-
     private var isEditMode = false
+    private var isDragging = false
 
-    // Untuk mendeteksi tap vs tahan-lama vs geser
     private var initialX = 0
     private var initialY = 0
     private var initialTouchX = 0f
     private var initialTouchY = 0f
-    private var downTime = 0L
-    private val longPressThresholdMs = 500L
-    private val touchSlopPx = 20
-    private var longPressTriggered = false
+    private val touchSlopPx = 18
 
-    private var longPressRunnable: Runnable? = null
+    private lateinit var gestureDetector: GestureDetector
 
     private val autoTapRunnable = object : Runnable {
         override fun run() {
@@ -61,10 +61,21 @@ class FloatingService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        autoTapIntervalMs = Prefs.getTapIntervalMs(this).toLong()
         startForegroundServiceNotification()
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         setupBubble()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_STOP) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        // Ambil kecepatan terbaru setiap kali service di-restart (misal setelah ganti setting)
+        autoTapIntervalMs = Prefs.getTapIntervalMs(this).toLong()
+        return START_STICKY
     }
 
     private fun startForegroundServiceNotification() {
@@ -80,16 +91,21 @@ class FloatingService : Service() {
         }
 
         val openAppIntent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, openAppIntent,
-            PendingIntent.FLAG_IMMUTABLE
+        val contentPendingIntent = PendingIntent.getActivity(
+            this, 0, openAppIntent, PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val stopIntent = Intent(this, FloatingService::class.java).apply { action = ACTION_STOP }
+        val stopPendingIntent = PendingIntent.getService(
+            this, 1, stopIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
         val notification: Notification = Notification.Builder(this, channelId)
             .setContentTitle("Makro by Gunz aktif")
             .setContentText("Mode mengambang sedang berjalan")
             .setSmallIcon(android.R.drawable.ic_menu_manage)
-            .setContentIntent(pendingIntent)
+            .setContentIntent(contentPendingIntent)
+            .addAction(0, "Matikan", stopPendingIntent)
             .setOngoing(true)
             .build()
 
@@ -104,20 +120,20 @@ class FloatingService : Service() {
         }
     }
 
+    private fun overlayType(): Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+    } else {
+        @Suppress("DEPRECATION")
+        WindowManager.LayoutParams.TYPE_PHONE
+    }
+
     private fun setupBubble() {
         bubbleView = View.inflate(this, R.layout.floating_bubble, null)
-
-        val overlayType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-        } else {
-            @Suppress("DEPRECATION")
-            WindowManager.LayoutParams.TYPE_PHONE
-        }
 
         bubbleParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
-            overlayType,
+            overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
         )
@@ -129,54 +145,52 @@ class FloatingService : Service() {
 
         val icon: TextView = bubbleView.findViewById(R.id.bubbleIcon)
 
-        icon.setOnTouchListener { _, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    if (isEditMode) return@setOnTouchListener true
+        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                if (!isEditMode) toggleAutoTap()
+                return true
+            }
 
+            override fun onLongPress(e: MotionEvent) {
+                if (!isDragging) enterEditMode()
+            }
+        })
+
+        icon.setOnTouchListener { _, event ->
+            gestureDetector.onTouchEvent(event)
+
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
                     initialX = bubbleParams.x
                     initialY = bubbleParams.y
                     initialTouchX = event.rawX
                     initialTouchY = event.rawY
-                    downTime = System.currentTimeMillis()
-                    longPressTriggered = false
-
-                    longPressRunnable = Runnable {
-                        longPressTriggered = true
-                        enterEditMode()
-                    }
-                    handler.postDelayed(longPressRunnable!!, longPressThresholdMs)
+                    isDragging = false
                     true
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    if (isEditMode) {
-                        val dx = (event.rawX - initialTouchX).toInt()
-                        val dy = (event.rawY - initialTouchY).toInt()
-                        bubbleParams.x = initialX + dx
-                        bubbleParams.y = initialY + dy
+                    val dx = event.rawX - initialTouchX
+                    val dy = event.rawY - initialTouchY
+
+                    if (!isDragging && (abs(dx) > touchSlopPx || abs(dy) > touchSlopPx)) {
+                        isDragging = true
+                    }
+
+                    if (isDragging) {
+                        bubbleParams.x = initialX + dx.toInt()
+                        bubbleParams.y = initialY + dy.toInt()
                         windowManager.updateViewLayout(bubbleView, bubbleParams)
-                    } else {
-                        val movedX = Math.abs(event.rawX - initialTouchX)
-                        val movedY = Math.abs(event.rawY - initialTouchY)
-                        if (movedX > touchSlopPx || movedY > touchSlopPx) {
-                            longPressRunnable?.let { handler.removeCallbacks(it) }
-                        }
+                        if (isEditMode) repositionEditButtons()
                     }
                     true
                 }
 
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    longPressRunnable?.let { handler.removeCallbacks(it) }
-
-                    if (!isEditMode && !longPressTriggered) {
-                        val elapsed = System.currentTimeMillis() - downTime
-                        val movedX = Math.abs(event.rawX - initialTouchX)
-                        val movedY = Math.abs(event.rawY - initialTouchY)
-                        if (elapsed < longPressThresholdMs && movedX < touchSlopPx && movedY < touchSlopPx) {
-                            toggleAutoTap()
-                        }
+                    if (isDragging) {
+                        Prefs.saveBubblePosition(this@FloatingService, bubbleParams.x, bubbleParams.y)
                     }
+                    isDragging = false
                     true
                 }
 
@@ -194,6 +208,7 @@ class FloatingService : Service() {
                 isAutoTapping = false
                 return
             }
+            autoTapIntervalMs = Prefs.getTapIntervalMs(this).toLong()
             handler.post(autoTapRunnable)
         } else {
             handler.removeCallbacks(autoTapRunnable)
@@ -207,61 +222,84 @@ class FloatingService : Service() {
     }
 
     private fun enterEditMode() {
+        if (isEditMode) return
         isEditMode = true
-        // Hentikan auto-tap sementara saat mengedit posisi
         if (isAutoTapping) {
             handler.removeCallbacks(autoTapRunnable)
         }
-        showConfirmButton()
+        showEditButtons()
     }
 
-    private fun showConfirmButton() {
-        if (confirmView != null) return
+    private fun showEditButtons() {
+        val overlay = overlayType()
 
         confirmView = View.inflate(this, R.layout.floating_confirm, null)
-
-        val overlayType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-        } else {
-            @Suppress("DEPRECATION")
-            WindowManager.LayoutParams.TYPE_PHONE
-        }
-
         confirmParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
-            overlayType,
+            overlay,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
-        )
-        confirmParams!!.gravity = Gravity.TOP or Gravity.START
-        confirmParams!!.x = bubbleParams.x
-        confirmParams!!.y = bubbleParams.y + bubbleView.height + 24
-
+        ).apply { gravity = Gravity.TOP or Gravity.START }
         windowManager.addView(confirmView, confirmParams)
+        confirmView!!.findViewById<View>(R.id.confirmIcon).setOnClickListener { confirmPosition() }
 
-        confirmView!!.findViewById<View>(R.id.confirmIcon).setOnClickListener {
-            confirmPosition()
+        stopView = View.inflate(this, R.layout.floating_stop, null)
+        stopParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            overlay,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        ).apply { gravity = Gravity.TOP or Gravity.START }
+        windowManager.addView(stopView, stopParams)
+        stopView!!.findViewById<View>(R.id.stopIcon).setOnClickListener { stopSelf() }
+
+        repositionEditButtons()
+    }
+
+    private fun repositionEditButtons() {
+        val bubbleWidth = bubbleView.width.takeIf { it > 0 } ?: 60
+        confirmParams?.let {
+            it.x = bubbleParams.x
+            it.y = bubbleParams.y + bubbleWidth + 16
+            confirmView?.let { v -> windowManager.updateViewLayout(v, it) }
+        }
+        stopParams?.let {
+            it.x = bubbleParams.x + bubbleWidth + 16
+            it.y = bubbleParams.y + bubbleWidth + 16
+            stopView?.let { v -> windowManager.updateViewLayout(v, it) }
         }
     }
 
     private fun confirmPosition() {
         Prefs.saveBubblePosition(this, bubbleParams.x, bubbleParams.y)
         isEditMode = false
+        hideEditButtons()
+    }
 
+    private fun hideEditButtons() {
         confirmView?.let { windowManager.removeView(it) }
         confirmView = null
         confirmParams = null
+
+        stopView?.let { windowManager.removeView(it) }
+        stopView = null
+        stopParams = null
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        handler.removeCallbacks(autoTapRunnable)
-        longPressRunnable?.let { handler.removeCallbacks(it) }
+        handler.removeCallbacksAndMessages(null)
 
         if (::bubbleView.isInitialized) {
             windowManager.removeView(bubbleView)
         }
         confirmView?.let { windowManager.removeView(it) }
+        stopView?.let { windowManager.removeView(it) }
+    }
+
+    companion object {
+        const val ACTION_STOP = "com.gunz.makro.action.STOP"
     }
 }
