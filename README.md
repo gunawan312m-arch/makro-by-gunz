@@ -3,18 +3,6 @@
 Aplikasi Android (Kotlin, native) — bukan simulasi. Fitur benar-benar berjalan lewat AccessibilityService + WindowManager overlay milik sistem Android.
 
 ## Alur aplikasi
-1. **Splash screen** — logo ⚡ + nama "Makro by Gunz" tampil ±1.5 detik lalu masuk ke menu utama.
-2. **Menu utama** — 2 langkah wajib sebelum bisa mulai:
-   - **Aktifkan Layanan Aksesibilitas** — tombol membuka `Settings > Aksesibilitas`, lalu kamu nyalakan "Makro by Gunz" di daftar layanan. (Ini yang berfungsi seperti "opsi pengembang" untuk mengizinkan aplikasi mengontrol ketukan layar — Android tidak mengizinkan auto-tap tanpa izin Accessibility Service ini.)
-   - **Pilih Aplikasi** — menampilkan semua aplikasi yang terpasang di HP (`PackageManager.queryIntentActivities`), pilih salah satu, lalu konfirmasi lewat dialog.
-3. Setelah dua syarat terpenuhi, tombol **Mulai Mode Mengambang** aktif. Ini akan meminta izin **"Tampil di atas aplikasi lain"** (overlay) jika belum diberikan, lalu menjalankan `FloatingService`.
-
-## Fitur utama (mode mengambang)
-- Muncul ikon bulat mengambang di layar (bisa terlihat di atas aplikasi apa pun).
-- **Tekan sekali (tap singkat)** → toggle ON/OFF ketuk otomatis. Saat aktif, ikon mengirim ketukan nyata (`GestureDescription` via AccessibilityService `dispatchGesture`) berulang setiap 150ms ke posisi ikon — bukan simulasi visual, ini gesture yang benar-benar dikirim ke sistem.
-- **Tahan lama (long-press ±500ms)** → masuk **mode edit posisi**: ikon bisa digeser bebas ke seluruh layar, dan tombol centang (✓) hijau muncul di bawahnya. Tekan tombol centang untuk **konfirmasi** posisi baru — posisi tersimpan (`SharedPreferences`) dan dipakai lagi saat service dijalankan ulang.
-
-## Alur aplikasi (v2 — update terbaru)
 1. **Splash screen** — logo custom + nama "Makro by Gunz" tampil ±1.5 detik lalu masuk ke menu utama.
 2. **Menu utama**, urut dari atas:
    - **Status Aktivasi** (paling atas) — tombol untuk mengaktifkan Accessibility Service.
@@ -22,14 +10,16 @@ Aplikasi Android (Kotlin, native) — bukan simulasi. Fitur benar-benar berjalan
    - **Atur Kecepatan Ketuk Otomatis** — membuka halaman baru dengan slider dari **Lambat** sampai **Sangat Cepat** (20ms–1000ms per ketukan), ada tombol **Konfirmasi** dan **Kembali**.
    - **Tombol Mulai** (paling bawah) — **nonaktif (abu-abu)** selama Accessibility Service belum aktif atau belum ada aplikasi dipilih. Begitu ditekan: otomatis **membuka aplikasi target pertama** dan langsung menyalakan **mode mengambang** di atasnya.
 
-## Fitur mode mengambang (v2)
-- **Double tap (ketuk 2x cepat)** pada ikon mengambang → toggle ON/OFF ketuk-otomatis (dipilih double-tap, bukan sekali tap, supaya tidak sengaja aktif saat menggeser ikon).
-- **Geser (drag) ikon kapan saja** → ikon mengikuti jari secara realtime dan halus, tidak terikat harus masuk "mode edit" dulu — jadi tidak ada bug nyangkut saat digeser.
-- **Tahan lama (long-press)** → masuk **mode edit**: muncul 2 tombol kecil di sekitar ikon:
-  - ✓ hijau = **konfirmasi** posisi (tersimpan otomatis, tombol langsung hilang).
-  - ✕ merah = **matikan** seluruhnya — service berhenti dan semua ikon/tombol overlay hilang otomatis.
-- Notifikasi mode mengambang juga punya tombol "Matikan" langsung dari notifikasi.
-- Kecepatan ketuk otomatis mengikuti nilai yang diset di halaman "Atur Kecepatan".
+## Fitur mode mengambang (v4 — update terbaru)
+- **Bubble TERKUNCI secara default** — tidak bisa digeser sama sekali kecuali mode **Edit Posisi** dibuka dari panel tepi kiri (wajib lewat panel).
+- Saat mode Edit Posisi aktif: bubble bisa digeser bebas + muncul tombol ✓ (konfirmasi) dan ✕ (matikan). Begitu ✓ ditekan, posisi tersimpan dan **bubble langsung terkunci lagi**.
+- **Tahan lama (±600ms)** pada bubble (saat tidak dalam mode edit) → toggle ON/OFF ketuk-otomatis.
+- **Panel tepi kiri** — garis kecil oranye nempel di tepi kiri layar. Usap ke kanan (atau tap) untuk membuka, otomatis tertutup lagi setelah 3 detik tanpa disentuh. Bisa digeser naik-turun sepanjang tepi kiri. Isi panel:
+  - **⌖ Crosshair** — nyala/mati; ikon target merah yang bisa digeser bebas ke mana saja, jadi titik ketuk-otomatis bisa dipisah dari posisi bubble.
+  - **✎ Edit Posisi** — buka/tutup mode edit bubble di atas.
+- **Perbaikan penting**: semua jendela mengambang (bubble, panel, crosshair, tombol konfirmasi/matikan) diberi flag `FLAG_NOT_TOUCH_MODAL`, sehingga **layar/aplikasi di baliknya tetap 100% bisa disentuh dan digeser bebas** kapan saja — termasuk saat ketuk-otomatis sedang aktif — tanpa nyangkut sedikit pun.
+- Notifikasi mode mengambang tetap ada tombol "Matikan" langsung.
+- Kecepatan ketuk otomatis mengikuti nilai dari halaman "Atur Kecepatan".
 
 ## Cara build APK LANGSUNG DARI HP (tanpa PC)
 

@@ -79,7 +79,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Tekan 2x cepat (double tap) ikon mengambang = mulai/berhenti ketuk otomatis. Ikon bisa digeser kapan saja. Tahan lama ikon = mode edit (konfirmasi posisi / matikan)."
+        android:text="Tahan lama ikon mengambang = mulai/berhenti ketuk otomatis. Ikon TERKUNCI (tidak bisa digeser) kecuali mode Edit Posisi dibuka dari panel tepi kiri. Usap dari tepi kiri layar = buka panel, otomatis tertutup setelah 3 detik. Layar tetap bisa disentuh/digeser bebas kapan saja."
         android:textColor="@color/grey_text"
         android:textSize="11sp"
         android:layout_marginBottom="16dp"/>

@@ -13,8 +13,11 @@ object Prefs {
     private const val KEY_BUBBLE_X = "bubble_x"
     private const val KEY_BUBBLE_Y = "bubble_y"
     private const val KEY_TAP_INTERVAL_MS = "tap_interval_ms"
+    private const val KEY_CROSSHAIR_ENABLED = "crosshair_enabled"
+    private const val KEY_CROSSHAIR_X = "crosshair_x"
+    private const val KEY_CROSSHAIR_Y = "crosshair_y"
+    private const val KEY_PANEL_Y = "panel_y"
 
-    // Kecepatan default: 150ms antar ketukan
     private const val DEFAULT_INTERVAL_MS = 150
 
     // ---------- Daftar aplikasi target (bisa lebih dari satu) ----------
@@ -72,7 +75,7 @@ object Prefs {
         saveTargetApps(context, newOrder)
     }
 
-    // ---------- Posisi bubble mengambang ----------
+    // ---------- Posisi tombol sentuh otomatis (bubble) ----------
 
     fun saveBubblePosition(context: Context, x: Int, y: Int) {
         context.getSharedPreferences(NAME, Context.MODE_PRIVATE).edit()
@@ -87,8 +90,42 @@ object Prefs {
     fun getBubbleY(context: Context, default: Int): Int =
         context.getSharedPreferences(NAME, Context.MODE_PRIVATE).getInt(KEY_BUBBLE_Y, default)
 
+    // ---------- Crosshair ----------
+
+    fun isCrosshairEnabled(context: Context): Boolean =
+        context.getSharedPreferences(NAME, Context.MODE_PRIVATE).getBoolean(KEY_CROSSHAIR_ENABLED, false)
+
+    fun setCrosshairEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(NAME, Context.MODE_PRIVATE).edit()
+            .putBoolean(KEY_CROSSHAIR_ENABLED, enabled)
+            .apply()
+    }
+
+    fun saveCrosshairPosition(context: Context, x: Int, y: Int) {
+        context.getSharedPreferences(NAME, Context.MODE_PRIVATE).edit()
+            .putInt(KEY_CROSSHAIR_X, x)
+            .putInt(KEY_CROSSHAIR_Y, y)
+            .apply()
+    }
+
+    fun getCrosshairX(context: Context, default: Int): Int =
+        context.getSharedPreferences(NAME, Context.MODE_PRIVATE).getInt(KEY_CROSSHAIR_X, default)
+
+    fun getCrosshairY(context: Context, default: Int): Int =
+        context.getSharedPreferences(NAME, Context.MODE_PRIVATE).getInt(KEY_CROSSHAIR_Y, default)
+
+    // ---------- Posisi vertikal panel tepi kiri ----------
+
+    fun savePanelY(context: Context, y: Int) {
+        context.getSharedPreferences(NAME, Context.MODE_PRIVATE).edit()
+            .putInt(KEY_PANEL_Y, y)
+            .apply()
+    }
+
+    fun getPanelY(context: Context, default: Int): Int =
+        context.getSharedPreferences(NAME, Context.MODE_PRIVATE).getInt(KEY_PANEL_Y, default)
+
     // ---------- Kecepatan ketuk otomatis ----------
-    // progress slider 0..100 -> interval ms (100 = paling cepat/20ms, 0 = paling lambat/1000ms)
 
     fun sliderProgressToIntervalMs(progress: Int): Int {
         val clamped = progress.coerceIn(0, 100)
