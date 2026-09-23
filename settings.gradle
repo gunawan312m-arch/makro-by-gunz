@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "MakroByGunz"
-include ':app'
+include(":app")
